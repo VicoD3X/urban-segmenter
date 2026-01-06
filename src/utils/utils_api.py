@@ -4,9 +4,9 @@ import base64
 import io
 from typing import Any, Dict
 
-import cv2
 import numpy as np
 import requests
+from PIL import Image
 
 
 def encode_image_to_base64(image_rgb: np.ndarray) -> str:
@@ -15,15 +15,15 @@ def encode_image_to_base64(image_rgb: np.ndarray) -> str:
     if image_rgb.ndim != 3 or image_rgb.shape[2] != 3:
         raise ValueError(f"image_rgb doit être de forme (H, W, 3). Reçu : {image_rgb.shape}")
 
-    # OpenCV attend du BGR, conversion préalable
-    image_bgr = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
-    ok, buffer = cv2.imencode(".png", image_bgr)
-    if not ok:
-        raise RuntimeError("Échec d'encodage PNG de l'image.")
+    # Assure uint8 pour PNG (si jamais on reçoit du float)
+    if image_rgb.dtype != np.uint8:
+        image_rgb = np.clip(image_rgb, 0, 255).astype(np.uint8)
 
-    # Conversion binaire → base64
-    img_bytes = buffer.tobytes()
-    return base64.b64encode(img_bytes).decode("utf-8")
+    img = Image.fromarray(image_rgb, mode="RGB")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
 def decode_mask_from_api(mask_data: Any) -> np.ndarray:
@@ -39,19 +39,16 @@ def decode_mask_from_api(mask_data: Any) -> np.ndarray:
 
 def send_image_to_api(image_rgb: np.ndarray, api_url: str) -> np.ndarray:
     """Envoie une image encodée à l'API et récupère le masque prédit."""
-    # Préparation du payload JSON (base64)
     img_b64 = encode_image_to_base64(image_rgb)
     payload: Dict[str, Any] = {"image": img_b64}
 
     response = requests.post(api_url, json=payload)
 
-    # Vérification des erreurs réseau ou backend
     if response.status_code != 200:
         raise RuntimeError(f"Erreur API ({response.status_code}) : {response.text}")
 
     data = response.json()
 
-    # Vérification de la présence du champ attendu
     if "mask_pred" not in data:
         raise KeyError("Champ 'mask_pred' manquant dans la réponse API.")
 
