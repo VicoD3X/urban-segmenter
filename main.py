@@ -10,8 +10,6 @@ from pydantic import BaseModel
 from PIL import Image
 import tensorflow as tf
 
-import cv2
-
 # ------------------------------------------------------------
 # Chargement du modèle U-Net VGG16
 # ------------------------------------------------------------
@@ -43,9 +41,10 @@ def decode_base64_image(image_b64: str) -> np.ndarray:
 def preprocess(image_rgb: np.ndarray) -> np.ndarray:
     """Resize + normalisation pour modèle U-Net."""
     H, W = 256, 512
-    img = cv2.resize(image_rgb, (W, H), interpolation=cv2.INTER_LINEAR)
-    img = img.astype("float32") / 255.0
+    img = Image.fromarray(image_rgb).resize((W, H), resample=Image.BILINEAR)
+    img = np.array(img).astype("float32") / 255.0
     return np.expand_dims(img, axis=0)
+
 
 
 
