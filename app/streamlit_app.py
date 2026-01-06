@@ -4,18 +4,21 @@ import os
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import streamlit as st
+import matplotlib.pyplot as plt
 from PIL import Image
 
-# Imports utilitaires internes au projet
+# Utilitaires internes au projet
 from src.utils.utils_data import list_available_ids, load_image_and_mask
 from src.utils.utils_api import send_image_to_api
 from src.utils.utils_visual import colorize_mask
 
 
-# ------------------------------------------------------------
-# Mapping Cityscapes 34 -> 8 classes (version légère pour Streamlit)
-# ------------------------------------------------------------
+# ============================================================
+# Mapping Cityscapes : 34 classes originales -> 8 classes cibles
+# Utilisé pour l’affichage et l’évaluation du masque réel
+# ============================================================
 CITYSCAPES_34_TO_8 = {
     0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0,          # background
     7: 1,                                              # road
@@ -28,151 +31,240 @@ CITYSCAPES_34_TO_8 = {
     29: 7, 30: 7, 31: 7, 32: 7, 33: 7                  # vehicle
 }
 
+# Noms des classes finales (8 classes)
+CLASS_NAMES = [
+    "background", "road", "sidewalk", "building",
+    "other const.", "object", "vegetation", "vehicle"
+]
+
+# Nombre total de classes finales
+N_CLASSES = 8
+
+
 def remap_mask(mask: np.ndarray) -> np.ndarray:
-    """
-    Applique le mapping Cityscapes 34 classes -> 8 classes.
-    Utilisé uniquement pour la visualisation du masque réel côté Streamlit.
-    """
+    # Applique le mapping Cityscapes 34 → 8 classes sur un masque
     new_mask = np.zeros_like(mask, dtype=np.uint8)
     for old_id, new_id in CITYSCAPES_34_TO_8.items():
         new_mask[mask == old_id] = new_id
     return new_mask
 
 
-# ------------------------------------------------------------
-# Configuration des chemins
-# ------------------------------------------------------------
+# ============================================================
+# Configuration des chemins et paramètres globaux
+# ============================================================
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
-IMAGES_DIR = Path(
-    os.getenv(
-        "IMAGES_DIR",
-        PROJECT_ROOT / "data" / "processed" / "images" / "test",
-    )
-)
-MASKS_DIR = Path(
-    os.getenv(
-        "MASKS_DIR",
-        PROJECT_ROOT / "data" / "processed" / "masks" / "test",
-    )
-)
+# Répertoires des images et masques (configurables via variables d’environnement)
+IMAGES_DIR = Path(os.getenv("IMAGES_DIR", PROJECT_ROOT / "data" / "processed" / "images" / "test"))
+MASKS_DIR = Path(os.getenv("MASKS_DIR", PROJECT_ROOT / "data" / "processed" / "masks" / "test"))
 
-# URL de l’API (modifiable via variable d’environnement)
-API_URL = os.getenv(
-    "API_URL",
-    "https://p8oc-api-6972f71da6e9.herokuapp.com/predict",
-)
+# URL de l’API de prédiction
+API_URL = os.getenv("API_URL", "https://p8oc-api-6972f71da6e9.herokuapp.com/predict")
 
 
-# ------------------------------------------------------------
-# Helpers
-# ------------------------------------------------------------
+# ============================================================
+# Helpers d’interface Streamlit (accessibilité et lisibilité)
+# ============================================================
+def page_header(title: str, description: str) -> None:
+    # Affiche le titre principal et la description de la page
+    st.title(title)
+    st.markdown(description)
+
+
+def chart_block(title: str, fig: plt.Figure, conclusion: str) -> None:
+    # Affiche un graphique avec un titre et une conclusion associée
+    st.subheader(title)
+    st.pyplot(fig, clear_figure=True, use_container_width=True)
+    st.caption(f"Conclusion : {conclusion}")
+
+
+def image_block(title: str, arr: np.ndarray, caption: str) -> None:
+    # Affiche une image avec un titre et une légende
+    st.subheader(title)
+    st.image(Image.fromarray(arr.astype(np.uint8)), use_container_width=True)
+    st.caption(caption)
+
+
 def np_to_pil(arr: np.ndarray) -> Image.Image:
-    """Convertit un tableau NumPy (H, W, 3) en image PIL."""
+    # Conversion d’un tableau NumPy en image PIL
     return Image.fromarray(arr.astype(np.uint8))
 
 
+# ============================================================
+# Chargement des données avec mise en cache Streamlit
+# ============================================================
 @st.cache_data
 def get_available_ids():
-    """Retourne la liste des IDs disponibles (mise en cache)."""
+    # Liste les identifiants d’images disponibles
     return list_available_ids(IMAGES_DIR)
 
 
 @st.cache_data
 def get_image_and_mask(image_id: str):
-    """Charge l’image RGB et le masque correspondant à un ID (mise en cache)."""
+    # Charge une image RGB et son masque associé
     return load_image_and_mask(image_id, IMAGES_DIR, MASKS_DIR)
 
 
-# ------------------------------------------------------------
-# Interface Streamlit
-# ------------------------------------------------------------
-st.set_page_config(
-    page_title="Projet P8 - Segmentation Cityscapes",
-    layout="wide",
-)
+# ============================================================
+# Calcul des métriques de segmentation
+# ============================================================
+def compute_metrics(mask_true_8: np.ndarray, mask_pred: np.ndarray) -> dict:
+    # Conversion explicite des types pour éviter les erreurs NumPy
+    mask_true_8 = mask_true_8.astype(np.int32)
+    mask_pred = mask_pred.astype(np.int32)
 
-st.title("🚗 Projet P8 – Segmentation de scènes urbaines")
-st.markdown(
-    """
-Application de démonstration du modèle de segmentation entraîné sur Cityscapes.
+    # Pixel accuracy globale
+    acc = float((mask_true_8 == mask_pred).mean())
 
-**Workflow :**
-1. Sélection d’un ID d’image.
-2. Chargement de l’image RGB et du masque réel.
-3. Envoi de l’image à l’API de segmentation.
-4. Visualisation du masque prédit et comparaison avec le masque réel.
-"""
-)
+    ious = []
+    dices = []
 
-# Sidebar : informations de configuration
-st.sidebar.header("Configuration")
-st.sidebar.write(f"📁 Dossier images : `{IMAGES_DIR}`")
-st.sidebar.write(f"📁 Dossier masques : `{MASKS_DIR}`")
-st.sidebar.write(f"🌐 URL API : `{API_URL}`")
+    # Calcul des métriques par classe
+    for c in range(N_CLASSES):
+        t = (mask_true_8 == c)
+        p = (mask_pred == c)
 
-# ------------------------------------------------------------
-# Sélection et traitement de l'image
-# ------------------------------------------------------------
-try:
-    ids = get_available_ids()
-except Exception as e:
-    st.error(f"Impossible de lister les IDs dans `{IMAGES_DIR}` : {e}")
-    st.stop()
+        inter = int(np.logical_and(t, p).sum())
+        union = int(np.logical_or(t, p).sum())
+        denom = int(t.sum() + p.sum())
 
-if not ids:
-    st.error(f"Aucune image détectée dans `{IMAGES_DIR}`.")
-    st.stop()
+        iou = (inter / union) if union > 0 else np.nan
+        dice = (2 * inter / denom) if denom > 0 else np.nan
 
-selected_id = st.selectbox("Sélection de l’ID de l’image :", ids)
+        ious.append(iou)
+        dices.append(dice)
 
-if st.button("Lancer la prédiction sur cet ID"):
+    # Moyennes sur les classes
+    miou = float(np.nanmean(ious))
+    mdice = float(np.nanmean(dices))
 
-    # Chargement image + masque réel
-    with st.spinner("Chargement des données..."):
-        try:
-            image_rgb, mask_true = get_image_and_mask(selected_id)
-        except Exception as e:
-            st.error(f"Erreur lors du chargement des données pour `{selected_id}` : {e}")
-            st.stop()
+    return {
+        "pixel_accuracy": acc,
+        "mean_iou": miou,
+        "mean_dice": mdice,
+        "per_class_iou": np.array(ious, dtype=np.float32),
+        "per_class_dice": np.array(dices, dtype=np.float32),
+    }
 
-    # Appel API de segmentation
-    with st.spinner("Appel à l’API de segmentation..."):
-        try:
-            mask_pred = send_image_to_api(image_rgb, API_URL)
-        except Exception as e:
-            st.error(f"Erreur lors de l’appel API : {e}")
-            st.stop()
 
-    # Colorisation pour visualisation
-    try:
-        # Remapping 34 -> 8 classes pour le masque réel (labelIds bruts)
-        mask_true_remap = remap_mask(mask_true)
-        mask_true_color = colorize_mask(mask_true_remap)
+# ============================================================
+# Fonctions de visualisation (compatibles N&B)
+# ============================================================
+def fig_class_distribution(counts_true: np.ndarray, counts_pred: np.ndarray) -> plt.Figure:
+    # Distribution des pixels par classe (réel vs prédit)
+    pct_true = counts_true / max(counts_true.sum(), 1) * 100.0
+    pct_pred = counts_pred / max(counts_pred.sum(), 1) * 100.0
 
-        # Le masque prédit est déjà en 0..7 (sortie du modèle)
-        mask_pred_color = colorize_mask(mask_pred)
-    except Exception as e:
-        st.error(f"Erreur lors de la colorisation des masques : {e}")
-        st.stop()
+    x = np.arange(N_CLASSES)
+    w = 0.42
 
-    # --------------------------------------------------------
-    # Affichage des résultats
-    # --------------------------------------------------------
-    col1, col2, col3 = st.columns(3)
+    fig = plt.figure(figsize=(10, 4))
+    ax = plt.gca()
 
-    with col1:
-        st.subheader("Image RGB")
-        st.image(np_to_pil(image_rgb), use_container_width=True)
+    bars1 = ax.bar(
+        x - w / 2, pct_true,
+        width=w, color="white", edgecolor="black",
+        hatch="///", label="Réel"
+    )
+    bars2 = ax.bar(
+        x + w / 2, pct_pred,
+        width=w, color="white", edgecolor="black",
+        hatch="xx", label="Prédit"
+    )
 
-    with col2:
-        st.subheader("Masque réel (remappé)")
-        st.image(np_to_pil(mask_true_color), use_container_width=True)
+    ax.set_xticks(x)
+    ax.set_xticklabels(CLASS_NAMES, rotation=25, ha="right")
+    ax.set_ylabel("% pixels")
+    ax.set_ylim(0, max(pct_true.max(), pct_pred.max()) * 1.25 + 1)
+    ax.legend()
 
-    with col3:
-        st.subheader("Masque prédit")
-        st.image(np_to_pil(mask_pred_color), use_container_width=True)
+    # Annotation des barres
+    for b in list(bars1) + list(bars2):
+        h = b.get_height()
+        ax.text(
+            b.get_x() + b.get_width() / 2,
+            h + 0.5,
+            f"{h:.1f}%",
+            ha="center",
+            va="bottom",
+            fontsize=8,
+        )
 
-    st.success("Prédiction terminée.")
-else:
-    st.info("Sélectionner un ID puis lancer la prédiction.")
+    ax.grid(axis="y", linestyle=":", linewidth=0.6)
+    return fig
+
+
+def fig_iou_per_class(ious: np.ndarray) -> plt.Figure:
+    # Visualisation de l’IoU par classe
+    fig = plt.figure(figsize=(10, 4))
+    ax = plt.gca()
+
+    x = np.arange(N_CLASSES)
+    vals = np.nan_to_num(ious, nan=0.0)
+
+    bars = ax.bar(x, vals, color="white", edgecolor="black", hatch="..")
+    ax.set_xticks(x)
+    ax.set_xticklabels(CLASS_NAMES, rotation=25, ha="right")
+    ax.set_ylabel("IoU")
+    ax.set_ylim(0, 1.0)
+
+    # Annotation des barres
+    for b in bars:
+        h = b.get_height()
+        ax.text(
+            b.get_x() + b.get_width() / 2,
+            h + 0.02,
+            f"{h:.2f}",
+            ha="center",
+            va="bottom",
+            fontsize=8,
+        )
+
+    ax.grid(axis="y", linestyle=":", linewidth=0.6)
+    return fig
+
+
+def fig_top_class_gaps(
+    counts_true: np.ndarray,
+    counts_pred: np.ndarray,
+) -> tuple[plt.Figure, list[int]]:
+    # Identification des classes avec les plus grands écarts de distribution
+    pct_true = counts_true / max(counts_true.sum(), 1) * 100.0
+    pct_pred = counts_pred / max(counts_pred.sum(), 1) * 100.0
+
+    gaps = np.abs(pct_true - pct_pred)
+    top_idx = np.argsort(gaps)[::-1][:5].tolist()
+
+    fig = plt.figure(figsize=(10, 4))
+    ax = plt.gca()
+
+    y = gaps[top_idx]
+    labels = [CLASS_NAMES[i] for i in top_idx]
+
+    bars = ax.bar(
+        np.arange(len(top_idx)),
+        y,
+        color="white",
+        edgecolor="black",
+        hatch="\\\\",
+    )
+
+    ax.set_xticks(np.arange(len(top_idx)))
+    ax.set_xticklabels(labels, rotation=25, ha="right")
+    ax.set_ylabel("Écart % (réel vs prédit)")
+    ax.set_ylim(0, max(y) * 1.25 + 1)
+
+    # Annotation des barres
+    for b in bars:
+        h = b.get_height()
+        ax.text(
+            b.get_x() + b.get_width() / 2,
+            h + 0.5,
+            f"{h:.1f}%",
+            ha="center",
+            va="bottom",
+            fontsize=8,
+        )
+
+    ax.grid(axis="y", linestyle=":", linewidth=0.6)
+    return fig, top_idx
