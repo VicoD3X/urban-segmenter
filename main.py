@@ -15,7 +15,7 @@ import cv2
 # ------------------------------------------------------------
 # Chargement du modèle U-Net VGG16
 # ------------------------------------------------------------
-MODEL_PATH = "models/unet_vgg16.keras"
+MODEL_PATH = "models/unet_effnetv2b0.keras"
 model = tf.keras.models.load_model(MODEL_PATH, compile=False)
 
 # ------------------------------------------------------------

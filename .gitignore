@@ -26,7 +26,7 @@ __pycache__/
 # Modèles : ignorer tous les modèles sauf UNet VGG16
 # ============================================================
 models/*
-!models/unet_vgg16.keras
+!models/unet_effnetv2b0.keras
 
 # ============================================================
 # Données : ne pas versionner les datasets complets
