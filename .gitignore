@@ -69,18 +69,13 @@ data/processed/masks/test/*
 !data/processed/masks/test/aachen_000004_000019_gtFine_labelIds.png
 !data/processed/masks/test/aachen_000005_000019_gtFine_labelIds.png
 
-# ...et 5 paires image/masque de démo (Frankfurt)
-!data/processed/images/test/frankfurt_000000_000294_leftImg8bit.png
-!data/processed/images/test/frankfurt_000000_000576_leftImg8bit.png
-!data/processed/images/test/frankfurt_000000_001016_leftImg8bit.png
+# ...et 2 paires image/masque de démo (Frankfurt) — on en garde seulement 2
 !data/processed/images/test/frankfurt_000000_001236_leftImg8bit.png
 !data/processed/images/test/frankfurt_000000_001751_leftImg8bit.png
 
-!data/processed/masks/test/frankfurt_000000_000294_gtFine_labelIds.png
-!data/processed/masks/test/frankfurt_000000_000576_gtFine_labelIds.png
-!data/processed/masks/test/frankfurt_000000_001016_gtFine_labelIds.png
 !data/processed/masks/test/frankfurt_000000_001236_gtFine_labelIds.png
 !data/processed/masks/test/frankfurt_000000_001751_gtFine_labelIds.png
+
 
 # ============================================================
 # Jupyter / Notebooks
