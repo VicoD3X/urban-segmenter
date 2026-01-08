@@ -16,6 +16,13 @@ from src.utils.utils_api import send_image_to_api
 from src.utils.utils_visual import colorize_mask
 
 
+# Configuration Streamlit (doit être appelée avant les autres commandes Streamlit)
+st.set_page_config(
+    page_title="P8 OC - Segmentation Cityscapes",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
 # ============================================================
 # Mapping Cityscapes : 34 classes originales -> 8 classes cibles
 # Utilisé pour l’affichage et l’évaluation du masque réel
@@ -308,11 +315,11 @@ def ensure_label_mask_2d(mask_pred_raw: Any, target_shape: tuple[int, int]) -> n
         arr = np.asarray(mask_pred_raw)
 
     if arr.ndim == 3:
-        # (H, W, C) : on tente de récupérer une seule couche de labels
+        # (H, W, C) : extraction d'une couche de labels
         if arr.shape[2] == 1:
             arr = arr[:, :, 0]
         elif arr.shape[2] == 3:
-            # Si RGB mais en fait 3 canaux identiques (grayscale stocké en RGB)
+            # Cas fréquent : masque grayscale stocké en RGB (3 canaux identiques)
             if np.all(arr[:, :, 0] == arr[:, :, 1]) and np.all(arr[:, :, 1] == arr[:, :, 2]):
                 arr = arr[:, :, 0]
             else:
@@ -326,7 +333,7 @@ def ensure_label_mask_2d(mask_pred_raw: Any, target_shape: tuple[int, int]) -> n
     if arr.ndim != 2:
         raise ValueError(f"Masque prédit: dimensions inattendues: {arr.shape}")
 
-    # Resize si nécessaire
+    # Resize si nécessaire (préserve les labels)
     if arr.shape != target_shape:
         arr_img = Image.fromarray(arr.astype(np.uint8))
         arr_img = arr_img.resize((target_shape[1], target_shape[0]), resample=Image.NEAREST)
@@ -334,7 +341,7 @@ def ensure_label_mask_2d(mask_pred_raw: Any, target_shape: tuple[int, int]) -> n
 
     arr = arr.astype(np.int32)
 
-    # Nettoyage valeurs hors classes
+    # Nettoyage des valeurs hors classes
     invalid = (arr < 0) | (arr >= N_CLASSES)
     if invalid.any():
         arr = arr.copy()
@@ -344,7 +351,7 @@ def ensure_label_mask_2d(mask_pred_raw: Any, target_shape: tuple[int, int]) -> n
 
 
 # ============================================================
-# UI PRINCIPALE STREAMLIT 
+# UI PRINCIPALE STREAMLIT
 # ============================================================
 def main() -> None:
     page_header(
@@ -353,14 +360,14 @@ def main() -> None:
         "Les graphiques utilisent des motifs N&B pour rester lisibles (accessibilité).",
     )
 
-    # --- Diagnostics (très utile en déploiement) ---
+    # Diagnostics de chemins / variables (utile en déploiement)
     with st.expander("🔧 Diagnostics"):
         st.write("PROJECT_ROOT:", str(PROJECT_ROOT))
         st.write("IMAGES_DIR:", str(IMAGES_DIR), "| exists =", IMAGES_DIR.exists())
         st.write("MASKS_DIR:", str(MASKS_DIR), "| exists =", MASKS_DIR.exists())
         st.write("API_URL (défaut):", API_URL)
 
-    # --- Pré-check dossiers ---
+    # Pré-check dossiers
     if not IMAGES_DIR.exists():
         st.error(f"Dossier images introuvable: {IMAGES_DIR}")
         st.stop()
@@ -370,23 +377,23 @@ def main() -> None:
         st.warning(f"Aucune image trouvée dans: {IMAGES_DIR}")
         st.stop()
 
-    # --- Sidebar ---
+    # Sidebar
     st.sidebar.header("Paramètres")
     image_id = st.sidebar.selectbox("ID image", ids)
     api_url = st.sidebar.text_input("URL API de prédiction", value=API_URL)
     run_pred = st.sidebar.button("Lancer la prédiction", type="primary")
 
-    # --- Chargement image + mask réel ---
+    # Chargement image + mask réel
     image_rgb, mask_true = get_image_and_mask(image_id)
     mask_true_8 = remap_mask(mask_true)
 
-    # --- Reset session_state si l’image (ou l’URL) change ---
+    # Reset session_state si l’image (ou l’URL) change
     request_key = f"{api_url}__{image_id}"
     if st.session_state.get("request_key") != request_key:
         st.session_state["request_key"] = request_key
         st.session_state["mask_pred"] = None
 
-    # --- Layout 3 colonnes ---
+    # Layout 3 colonnes
     col1, col2, col3 = st.columns(3, gap="large")
 
     with col1:
@@ -399,28 +406,29 @@ def main() -> None:
             "Masque ground-truth remappé 34 → 8 classes.",
         )
 
-    # --- Appel API (sur clic) ---
+    # Appel API (sur clic)
     if run_pred:
         with st.spinner("Appel API en cours..."):
             try:
-                raw_pred = send_image_to_api(np_to_pil(image_rgb), api_url)
+                # Correction: envoi du np.ndarray (image_rgb) à l'API, pas d'objet PIL.Image
+                raw_pred = send_image_to_api(image_rgb, api_url)
                 mask_pred = ensure_label_mask_2d(raw_pred, target_shape=mask_true_8.shape)
                 st.session_state["mask_pred"] = mask_pred
             except Exception as e:
                 st.session_state["mask_pred"] = None
                 st.error(f"Erreur lors de l’appel API / parsing du mask : {e}")
 
-    # --- Affichage mask prédit ---
+    # Affichage mask prédit
     with col3:
         if st.session_state.get("mask_pred") is None:
             st.subheader("Mask prédit")
-            st.info("Clique sur **« Lancer la prédiction »** pour afficher le mask prédit.")
+            st.info("Cliquer sur **« Lancer la prédiction »** pour afficher le mask prédit.")
             st.stop()
 
         mask_pred = st.session_state["mask_pred"]
         image_block("Mask prédit", colorize_mask(mask_pred), "Masque renvoyé par l’API (IDs 0..7).")
 
-    # --- Métriques + tableaux + graphes ---
+    # Métriques + tableaux + graphes
     st.divider()
 
     metrics = compute_metrics(mask_true_8, mask_pred)
@@ -464,5 +472,5 @@ def main() -> None:
     )
 
 
-# Appel explicite : sans ça = page vide
+# Point d'entrée
 main()
