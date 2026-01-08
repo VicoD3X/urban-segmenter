@@ -13,6 +13,7 @@ from src.utils.utils_data import list_available_ids, load_image_and_mask
 from src.utils.utils_api import send_image_to_api
 from src.utils.utils_visual import colorize_mask
 
+
 # ------------------------------------------------------------
 # Mapping Cityscapes 34 -> 8 classes (version légère pour Streamlit)
 # ------------------------------------------------------------
@@ -126,7 +127,7 @@ def plot_class_importance(mask_true_8: np.ndarray, mask_pred: np.ndarray) -> plt
 
     ax.set_xticks(x)
     ax.set_xticklabels(CLASS_NAMES, rotation=25, ha="right")
-    ax.set_ylabel("% de pixels")
+    ax.set_ylabel("Proportion de pixels (%)")
     ax.set_ylim(0, max(float(pct_true.max()), float(pct_pred.max())) * 1.25 + 1)
     ax.grid(axis="y", linestyle=":", linewidth=0.6)
     ax.legend()
@@ -162,39 +163,97 @@ def get_image_and_mask(image_id: str):
 # Interface Streamlit
 # ------------------------------------------------------------
 st.set_page_config(
-    page_title="Projet P8 - Segmentation Cityscapes",
+    page_title="P8 – Segmentation Cityscapes",
     layout="wide",
 )
 
-st.title("🚗 Projet P8 – Segmentation de scènes urbaines")
+# Design : contraintes de lisibilité à 200% + hiérarchie typographique
+st.markdown(
+    """
+<style>
+/* Largeur lisible et stable (utile à 200% zoom) */
+.block-container {
+    max-width: 1200px;
+    padding-top: 1.8rem;
+    padding-bottom: 3rem;
+}
+
+/* Typographie : lisibilité */
+.stMarkdown, .stText, .stCaption, .stAlert, .stSelectbox, .stButton, .stRadio, .stCheckbox {
+    font-size: 1.02rem;
+    line-height: 1.55;
+}
+
+/* Hiérarchie titres */
+h1 { margin-bottom: 0.25rem; }
+h2 { margin-top: 1.6rem; }
+h3 { margin-top: 1.2rem; }
+
+/* Focus visible (clavier) */
+button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+    outline: 3px solid rgba(0,0,0,0.45) !important;
+    outline-offset: 2px !important;
+}
+
+/* Sidebar : un peu d’air */
+section[data-testid="stSidebar"] { padding-top: 1rem; }
+
+/* Espacements des éléments */
+div[data-testid="stVerticalBlock"] > div { gap: 0.6rem; }
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+# Header “produit”
+st.title("Segmentation sémantique — scènes urbaines")
+st.caption("Projet P8 (OpenClassrooms) • Démonstrateur de segmentation Cityscapes (8 classes)")
 
 st.markdown(
     """
-Application de démonstration du modèle de segmentation entraîné sur Cityscapes.
+Cette application présente un flux complet : sélection d’une image, comparaison du masque réel et du masque prédit,
+et analyse de la répartition des classes.
 
-**Workflow :**
-1. Sélection d’un ID d’image.
-2. Chargement de l’image RGB et du masque réel.
-3. Envoi de l’image à l’API de segmentation.
-4. Visualisation du masque prédit et comparaison avec le masque réel.
+**Accessibilité :** l’interface reste lisible à 200% de zoom ; le graphique utilise des hachures (N&B) pour éviter une dépendance à la couleur.
 """
 )
 
-# Sidebar : informations de configuration + mode d’affichage (accessibilité 200% zoom)
-st.sidebar.header("Configuration")
-st.sidebar.write(f"📁 Dossier images : `{IMAGES_DIR}`")
-st.sidebar.write(f"📁 Dossier masques : `{MASKS_DIR}`")
-st.sidebar.write(f"🌐 URL API : `{API_URL}`")
+st.divider()
+
+# Sidebar : organisation “pro”
+st.sidebar.header("Paramètres")
 
 display_mode = st.sidebar.selectbox(
-    "Mode d’affichage (accessibilité)",
+    "Affichage des résultats",
     ["Onglets (recommandé à 200% zoom)", "Colonnes (écran large)"],
     index=0,
 )
 
-# ------------------------------------------------------------
-# Sélection et traitement de l'image
-# ------------------------------------------------------------
+st.sidebar.markdown("### Sources")
+images_ok = IMAGES_DIR.exists()
+masks_ok = MASKS_DIR.exists()
+st.sidebar.write(f"Images : {'✅' if images_ok else '❌'} `{IMAGES_DIR}`")
+st.sidebar.write(f"Masques : {'✅' if masks_ok else '❌'} `{MASKS_DIR}`")
+
+st.sidebar.markdown("### Service de prédiction")
+st.sidebar.code(API_URL, language="text")
+
+with st.sidebar.expander("Aide / informations"):
+    st.write(
+        "Le service de prédiction peut nécessiter un temps d’initialisation selon l’infrastructure d’hébergement. "
+        "Un premier appel peut être plus lent."
+    )
+    st.write("Le graphique d’analyse reste accessible (hachures + contours).")
+
+# Pré-check dossiers (message clair)
+if not images_ok:
+    st.error(f"Dossier images introuvable : {IMAGES_DIR}")
+    st.stop()
+if not masks_ok:
+    st.error(f"Dossier masques introuvable : {MASKS_DIR}")
+    st.stop()
+
+# Sélection ID
 try:
     ids = get_available_ids()
 except Exception as e:
@@ -205,19 +264,23 @@ if not ids:
     st.error(f"Aucune image détectée dans `{IMAGES_DIR}`.")
     st.stop()
 
-selected_id = st.selectbox("Sélection de l’ID de l’image :", ids)
+st.subheader("Sélection")
+selected_id = st.selectbox("ID de l’image", ids)
 
-if st.button("Lancer la prédiction sur cet ID"):
+st.divider()
+
+# Action principale
+if st.button("Lancer la prédiction", type="primary"):
     # Chargement image + masque réel
-    with st.spinner("Chargement des données..."):
+    with st.spinner("Chargement des données…"):
         try:
             image_rgb, mask_true = get_image_and_mask(selected_id)
         except Exception as e:
             st.error(f"Erreur lors du chargement des données pour `{selected_id}` : {e}")
             st.stop()
 
-    # Appel API de segmentation
-    with st.spinner("Appel à l’API de segmentation..."):
+    # Appel API de segmentation (logique inchangée)
+    with st.spinner("Prédiction en cours…"):
         try:
             mask_pred = send_image_to_api(image_rgb, API_URL)
         except Exception as e:
@@ -233,46 +296,43 @@ if st.button("Lancer la prédiction sur cet ID"):
         st.error(f"Erreur lors de la colorisation des masques : {e}")
         st.stop()
 
-    # --------------------------------------------------------
-    # Affichage des résultats
-    # --------------------------------------------------------
+    # Résumé rapide (vitrine)
+    st.subheader("Résumé")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("ID", selected_id)
+    c2.metric("Taille image", f"{image_rgb.shape[1]} × {image_rgb.shape[0]}")
+    c3.metric("Classes", "8")
+
+    st.divider()
+
+    st.subheader("Résultats")
     if display_mode == "Onglets (recommandé à 200% zoom)":
         tab1, tab2, tab3 = st.tabs(["Image RGB", "Masque réel (remappé)", "Masque prédit"])
 
         with tab1:
-            st.subheader("Image RGB")
-            st.image(np_to_pil(image_rgb), use_container_width=True)
+            st.image(np_to_pil(image_rgb), caption="Image d’entrée", use_container_width=True)
 
         with tab2:
-            st.subheader("Masque réel (remappé)")
-            st.image(np_to_pil(mask_true_color), use_container_width=True)
+            st.image(np_to_pil(mask_true_color), caption="Masque réel remappé (34 → 8)", use_container_width=True)
 
         with tab3:
-            st.subheader("Masque prédit")
-            st.image(np_to_pil(mask_pred_color), use_container_width=True)
-
+            st.image(np_to_pil(mask_pred_color), caption="Masque prédit (0 → 7)", use_container_width=True)
     else:
         col1, col2, col3 = st.columns(3)
-
         with col1:
-            st.subheader("Image RGB")
-            st.image(np_to_pil(image_rgb), use_container_width=True)
-
+            st.image(np_to_pil(image_rgb), caption="Image d’entrée", use_container_width=True)
         with col2:
-            st.subheader("Masque réel (remappé)")
-            st.image(np_to_pil(mask_true_color), use_container_width=True)
-
+            st.image(np_to_pil(mask_true_color), caption="Masque réel remappé (34 → 8)", use_container_width=True)
         with col3:
-            st.subheader("Masque prédit")
-            st.image(np_to_pil(mask_pred_color), use_container_width=True)
+            st.image(np_to_pil(mask_pred_color), caption="Masque prédit (0 → 7)", use_container_width=True)
 
-    # --------------------------------------------------------
-    # Graphique "features importantes"
-    # --------------------------------------------------------
-    st.subheader("Répartition des classes (importance) — Réel vs Prédit")
+    st.divider()
+
+    st.subheader("Analyse — répartition des classes (importance)")
     fig = plot_class_importance(mask_true_remap, mask_pred)
-    st.pyplot(fig, use_container_width=True)
+    st.pyplot(fig, use_container_width=True, clear_figure=True)
+    plt.close(fig)
 
     st.success("Prédiction terminée.")
 else:
-    st.info("Sélectionner un ID puis lancer la prédiction.")
+    st.info("Sélectionner un ID, puis lancer la prédiction.")
