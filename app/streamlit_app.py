@@ -78,6 +78,14 @@ API_URL = os.getenv(
     "https://p8oc-api-6972f71da6e9.herokuapp.com/predict",
 )
 
+# Backend de prédiction :
+# - "local" : prédiction locale avec le modèle Keras (recommandé pour éviter les 503)
+# - "api"   : appel HTTP à l’API distante
+PREDICTION_BACKEND = os.getenv("PREDICTION_BACKEND", "local").strip().lower()
+
+# Chemin du modèle local (utilisé uniquement si PREDICTION_BACKEND=local)
+MODEL_PATH = os.getenv("MODEL_PATH", str(PROJECT_ROOT / "models" / "unet_effnetv2b0.keras"))
+
 
 # ------------------------------------------------------------
 # Helpers
@@ -160,6 +168,65 @@ def get_image_and_mask(image_id: str):
 
 
 # ------------------------------------------------------------
+# Prédiction locale (utilisée si PREDICTION_BACKEND=local ou en fallback)
+# ------------------------------------------------------------
+@st.cache_resource
+def load_local_model(model_path: str):
+    """Charge le modèle Keras une seule fois par session Streamlit (cache_resource)."""
+    import tensorflow as tf
+    return tf.keras.models.load_model(model_path, compile=False)
+
+
+def predict_mask_local(image_rgb: np.ndarray, target_shape: tuple[int, int]) -> np.ndarray:
+    """
+    Prédiction locale d’un masque 2D (labels 0..7).
+    - Redimensionne l’image selon l’input du modèle
+    - Redimensionne le masque à target_shape en NEAREST
+    """
+    model = load_local_model(MODEL_PATH)
+
+    input_shape = model.input_shape
+    if isinstance(input_shape, list):
+        input_shape = input_shape[0]
+
+    h_in, w_in = input_shape[1], input_shape[2]
+    if h_in is None or w_in is None:
+        h_in, w_in = target_shape[0], target_shape[1]
+
+    img = Image.fromarray(image_rgb.astype(np.uint8)).resize((w_in, h_in), resample=Image.BILINEAR)
+    x = np.asarray(img).astype("float32") / 255.0
+    x = np.expand_dims(x, axis=0)
+
+    pred = model.predict(x, verbose=0)
+    if isinstance(pred, (list, tuple)):
+        pred = pred[0]
+    pred = np.asarray(pred)
+
+    if pred.ndim == 4:
+        pred = pred[0]
+
+    if pred.ndim == 3 and pred.shape[-1] > 1:
+        mask = np.argmax(pred, axis=-1)
+    elif pred.ndim == 3 and pred.shape[-1] == 1:
+        mask = pred[..., 0]
+    elif pred.ndim == 2:
+        mask = pred
+    else:
+        raise ValueError(f"Sortie modèle inattendue : shape={pred.shape}")
+
+    mask = np.asarray(mask).astype(np.int32)
+
+    if mask.shape != target_shape:
+        mask_img = Image.fromarray(mask.astype(np.uint8)).resize(
+            (target_shape[1], target_shape[0]),
+            resample=Image.NEAREST
+        )
+        mask = np.asarray(mask_img).astype(np.int32)
+
+    return np.clip(mask, 0, 7).astype(np.uint8)
+
+
+# ------------------------------------------------------------
 # Interface Streamlit
 # ------------------------------------------------------------
 st.set_page_config(
@@ -236,6 +303,8 @@ st.sidebar.write(f"Images : {'✅' if images_ok else '❌'} `{IMAGES_DIR}`")
 st.sidebar.write(f"Masques : {'✅' if masks_ok else '❌'} `{MASKS_DIR}`")
 
 st.sidebar.markdown("### Service de prédiction")
+st.sidebar.write(f"Backend : `{PREDICTION_BACKEND}`")
+st.sidebar.write(f"Modèle local : `{MODEL_PATH}`")
 st.sidebar.code(API_URL, language="text")
 
 with st.sidebar.expander("Aide / informations"):
@@ -279,12 +348,19 @@ if st.button("Lancer la prédiction", type="primary"):
             st.error(f"Erreur lors du chargement des données pour `{selected_id}` : {e}")
             st.stop()
 
-    # Appel API de segmentation (logique inchangée)
+    # Prédiction : local (recommandé) ou API + fallback local automatique
     with st.spinner("Prédiction en cours…"):
         try:
-            mask_pred = send_image_to_api(image_rgb, API_URL)
+            if PREDICTION_BACKEND == "local":
+                mask_pred = predict_mask_local(image_rgb, target_shape=mask_true.shape)
+            else:
+                try:
+                    mask_pred = send_image_to_api(image_rgb, API_URL)
+                except Exception:
+                    mask_pred = predict_mask_local(image_rgb, target_shape=mask_true.shape)
+                    st.warning("API indisponible : bascule automatique en prédiction locale.")
         except Exception as e:
-            st.error(f"Erreur lors de l’appel API : {e}")
+            st.error(f"Erreur lors de la prédiction : {e}")
             st.stop()
 
     # Colorisation pour visualisation
@@ -338,7 +414,17 @@ else:
     st.info("Sélectionner un ID, puis lancer la prédiction.")
 
 
-# ACTIVATION: 
-#  cd C:\Users\vicau\P8OC 
-#  $env:PYTHONPATH=(Get-Location) 
+# ACTIVATION (Windows / PowerShell) :
+#  cd C:\Users\vicau\P8OC
+#  .\.venv\Scripts\Activate.ps1
+#  $env:PYTHONPATH=(Get-Location)
+#
+# Recommandé (prédiction locale, évite les 503) :
+#  $env:PREDICTION_BACKEND="local"
+#  $env:MODEL_PATH="models\unet_effnetv2b0.keras"
+#  streamlit run app\streamlit_app.py
+#
+# Optionnel (forcer l’API distante) :
+#  $env:PREDICTION_BACKEND="api"
+#  $env:API_URL="https://p8oc-api-6972f71da6e9.herokuapp.com/predict"
 #  streamlit run app\streamlit_app.py
