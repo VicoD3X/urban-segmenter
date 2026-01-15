@@ -336,3 +336,9 @@ if st.button("Lancer la prédiction", type="primary"):
     st.success("Prédiction terminée.")
 else:
     st.info("Sélectionner un ID, puis lancer la prédiction.")
+
+
+# ACTIVATION: 
+#  cd C:\Users\vicau\P8OC 
+#  $env:PYTHONPATH=(Get-Location) 
+#  streamlit run app\streamlit_app.py

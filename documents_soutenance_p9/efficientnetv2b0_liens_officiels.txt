@@ -1,0 +1,68 @@
+EFFICIENNETV2 (choix recommandé : EfficientNetV2B0) — Liens officiels
+======================================================================
+
+1) Publications scientifiques (sources académiques)
+--------------------------------------------------
+- ICML 2021 (Proceedings of Machine Learning Research - PMLR) — page papier :
+  https://proceedings.mlr.press/v139/tan21a.html
+
+- ICML 2021 (PMLR) — PDF :
+  https://proceedings.mlr.press/v139/tan21a/tan21a.pdf
+
+- arXiv — page papier (abs) :
+  https://arxiv.org/abs/2104.00298
+
+- arXiv — PDF :
+  https://arxiv.org/pdf/2104.00298
+
+
+2) Pages “officielles” Google (publication / annonce)
+-----------------------------------------------------
+- Google Research (pubs) — EfficientNetV2: Smaller Models and Faster Training :
+  https://research.google/pubs/efficientnetv2-smaller-models-and-faster-training/
+
+- Google Research Blog — “Toward Fast and Accurate Neural Networks for Image Recognition”
+  (post qui présente EfficientNetV2 et mentionne l’open-source + modèles TFHub) :
+  https://research.google/blog/toward-fast-and-accurate-neural-networks-for-image-recognition/
+
+
+3) Code officiel (référence)
+----------------------------
+- GitHub (Google Brain AutoML) — repository :
+  https://github.com/google/automl
+
+- Code EfficientNetV2 (dossier) :
+  https://github.com/google/automl/tree/master/efficientnetv2
+
+- README EfficientNetV2 :
+  https://github.com/google/automl/blob/master/efficientnetv2/README.md
+
+- Notebook tutorial (inference / eval / training) :
+  https://github.com/google/automl/blob/master/efficientnetv2/tutorial.ipynb
+
+- Notebook TFHub (exemples d’usage des modèles pré-entraînés) :
+  https://github.com/google/automl/blob/master/efficientnetv2/tfhub.ipynb
+
+
+4) Documentation officielle (Keras / TensorFlow)
+------------------------------------------------
+- TensorFlow API — tf.keras.applications.EfficientNetV2B0 :
+  https://www.tensorflow.org/api_docs/python/tf/keras/applications/EfficientNetV2B0
+
+- TensorFlow API — module efficientnet_v2 (ensemble des variantes) :
+  https://www.tensorflow.org/api_docs/python/tf/keras/applications/efficientnet_v2
+
+- Keras API — EfficientNetV2 (B0–B3, S/M/L) :
+  https://keras.io/api/applications/efficientnet_v2/
+
+- Keras API — Applications (index global) :
+  https://keras.io/api/applications/
+
+
+5) TensorFlow Hub (modèles pré-entraînés officiels)
+---------------------------------------------------
+- EfficientNetV2 (ImageNet-1k) — B0 classification :
+  https://tfhub.dev/google/imagenet/efficientnet_v2_imagenet1k_b0/classification/2
+
+- EfficientNetV2 (ImageNet-1k) — B0 feature vector :
+  https://tfhub.dev/google/imagenet/efficientnet_v2_imagenet1k_b0/feature_vector/2

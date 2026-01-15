@@ -1,0 +1,51 @@
+Dictionnaire Cityscapes 34 classes -> 8 classes simplifiées
+================================================================
+
+Format : ID_original (nom_cityscapes) -> ID_simplifié (catégorie)
+
+0  (unlabeled)            -> 0 (background)
+1  (ego vehicle)          -> 0 (background)
+2  (rectification border) -> 0 (background)
+3  (out of roi)           -> 0 (background)
+4  (static)               -> 0 (background)
+5  (dynamic)              -> 0 (background)
+6  (ground)               -> 0 (background)
+7  (road)                 -> 1 (road)
+8  (sidewalk)             -> 2 (sidewalk)
+9  (parking)              -> 0 (background)
+10 (rail track)           -> 0 (background)
+11 (building)             -> 3 (building)
+12 (wall)                 -> 4 (other construction)
+13 (fence)                -> 4 (other construction)
+14 (guard rail)           -> 4 (other construction)
+15 (bridge)               -> 4 (other construction)
+16 (tunnel)               -> 4 (other construction)
+17 (pole)                 -> 5 (object)
+18 (polegroup)            -> 5 (object)
+19 (traffic light)        -> 5 (object)
+20 (traffic sign)         -> 5 (object)
+21 (vegetation)           -> 6 (vegetation)
+22 (terrain)              -> 6 (vegetation)
+23 (sky)                  -> 7 (vehicle / agents)
+24 (person)               -> 7 (vehicle / agents)
+25 (rider)                -> 7 (vehicle / agents)
+26 (car)                  -> 7 (vehicle)
+27 (truck)                -> 7 (vehicle)
+28 (bus)                  -> 7 (vehicle)
+29 (caravan)              -> 7 (vehicle)
+30 (trailer)              -> 7 (vehicle)
+31 (train)                -> 7 (vehicle)
+32 (motorcycle)           -> 7 (vehicle)
+33 (bicycle)              -> 7 (vehicle)
+
+
+Mapping des 34 classes Cityscapes -> 8 classes
+----------------------------------------------
+0 : background           -> [0, 1, 2, 3, 4, 5, 6, 9, 10]
+1 : road                 -> [7]
+2 : sidewalk             -> [8]
+3 : building             -> [11]
+4 : other construction   -> [12, 13, 14, 15, 16]
+5 : object               -> [17, 18, 19, 20]
+6 : vegetation           -> [21, 22]
+7 : vehicle / agents     -> [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]
