@@ -1,5 +1,6 @@
 # Urban Segmenter — Cityscapes Segmentation Lab
 
+[![CI](https://github.com/VicoD3X/urban-segmenter/actions/workflows/ci.yml/badge.svg)](https://github.com/VicoD3X/urban-segmenter/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-Keras-FF6F00?logo=tensorflow&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-inference_API-009688?logo=fastapi&logoColor=white)
@@ -77,6 +78,12 @@ L’application Streamlit permet de sélectionner une image de démonstration, d
 La démo peut fonctionner en backend local, recommandé pour le portfolio, ou via une API distante en configurant les variables d’environnement.
 
 La couche Streamlit reste volontairement simple : la configuration, le mapping Cityscapes, l’inférence et la visualisation sont progressivement extraits dans `src/` pour garder une base plus lisible sans refonte lourde.
+
+## Résultat visuel
+
+![Aperçu de l'interface Streamlit](docs/streamlit-preview.png)
+
+Cet aperçu montre la démo locale après lancement d'une prédiction sur une image Cityscapes de démonstration. L'interface expose l'image, les masques et un résumé simple du flux d'inférence.
 
 ## Données de démonstration
 
