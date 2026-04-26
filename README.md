@@ -34,10 +34,7 @@ L’objectif est de prédire un masque de segmentation pour une image urbaine et
 |-- models/                  # Modèles Keras utilisés pour l’inférence locale
 |-- notebooks/               # Notebooks d’entraînement / évaluation
 |-- docs/                    # Documentation de synthèse du dépôt
-|-- documents_soutenance_P8/ # Supports historiques conservés
-|-- documents_soutenance_p9/ # Supports historiques conservés
-|-- captures_soutenance_P8/  # Captures historiques conservées
-|-- captures_soutenance_P9/  # Captures historiques conservées
+|   `-- project-notes/       # Notes techniques complémentaires
 |-- tests/                   # Tests unitaires légers
 |-- requirements.txt         # Dépendances API FastAPI
 |-- requirements_streamlit.txt
@@ -155,11 +152,11 @@ pytest
 
 Les tests actuels restent légers et vérifient surtout les utilitaires de chargement, d’appel API et de visualisation.
 
-## Déploiement Heroku
+## Intégration continue
 
-Un workflow Heroku existe dans `.github/workflows/deploy-heroku.yml`. L’API distante a été testée, mais son déploiement peut être désactivé ou limité par les ressources disponibles : modèle lourd, cold start et contraintes d’hébergement gratuit.
+Un workflow GitHub Actions exécute les tests unitaires à chaque push sur `main`.
 
-Le mode recommandé pour évaluer le projet reste donc le lancement local. L’objectif est de montrer l’architecture et le flux d’inférence, pas de maintenir une infrastructure cloud active.
+Le mode recommandé pour évaluer le projet reste le lancement local. L’objectif est de montrer l’architecture et le flux d’inférence, pas de maintenir une infrastructure cloud active.
 
 ## Limites actuelles
 
@@ -180,4 +177,4 @@ Le mode recommandé pour évaluer le projet reste donc le lancement local. L’o
 
 ## Contexte du projet
 
-Le projet a été initialement développé dans le cadre d’un parcours professionnalisant en Data Science, puis repris comme projet portfolio Computer Vision. Cette version met l’accent sur la lisibilité du dépôt, la compréhension rapide du flux technique et la capacité à relier expérimentation, API et démonstration utilisateur.
+Urban Segmenter est maintenu comme projet portfolio Computer Vision. Cette version met l’accent sur la lisibilité du dépôt, la compréhension rapide du flux technique et la capacité à relier expérimentation, API et démonstration utilisateur.
