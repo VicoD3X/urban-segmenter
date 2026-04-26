@@ -56,6 +56,8 @@ Le modèle attendu par défaut pour la démo locale est :
 models/unet_effnetv2b0.keras
 ```
 
+Une synthèse des rôles de chaque architecture est disponible dans `docs/model-comparison.md`.
+
 ## API FastAPI
 
 L’API reçoit une image encodée en base64 et renvoie un masque prédit sous forme JSON. Elle est exposée par `main.py` avec une route principale :
@@ -64,7 +66,7 @@ L’API reçoit une image encodée en base64 et renvoie un masque prédit sous f
 POST /predict
 ```
 
-La logique de prédiction n’a pas été modifiée dans cette passe de remise à niveau.
+L’API réutilise désormais le module `src.inference` pour éviter de dupliquer la logique d’inférence entre FastAPI et Streamlit.
 
 ## Interface Streamlit
 
