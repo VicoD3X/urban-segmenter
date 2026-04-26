@@ -1,4 +1,4 @@
-# Cityscapes Segmentation Lab — U-Net Semantic Segmentation
+# Urban Segmenter — Cityscapes Segmentation Lab
 
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-Keras-FF6F00?logo=tensorflow&logoColor=white)
@@ -23,6 +23,10 @@ L’objectif est de prédire un masque de segmentation pour une image urbaine et
 |-- app/                     # Interface Streamlit
 |-- main.py                  # API FastAPI actuelle
 |-- src/
+|   |-- config.py            # Configuration des chemins et backends
+|   |-- inference.py         # Inférence locale/API et fallback
+|   |-- segmentation.py      # Mapping Cityscapes et classes
+|   |-- visualization.py     # Conversion image et graphiques
 |   |-- models/              # Architectures U-Net
 |   |-- utils/               # Fonctions utilitaires
 |   `-- metrics.py           # Métriques et losses
@@ -72,6 +76,8 @@ L’application Streamlit permet de sélectionner une image de démonstration, d
 - la répartition des classes en proportion de pixels.
 
 La démo peut fonctionner en backend local, recommandé pour le portfolio, ou via une API distante en configurant les variables d’environnement.
+
+La couche Streamlit reste volontairement simple : la configuration, le mapping Cityscapes, l’inférence et la visualisation sont progressivement extraits dans `src/` pour garder une base plus lisible sans refonte lourde.
 
 ## Données de démonstration
 
