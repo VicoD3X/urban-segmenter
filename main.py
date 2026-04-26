@@ -19,7 +19,7 @@ model = tf.keras.models.load_model(MODEL_PATH, compile=False)
 # ------------------------------------------------------------
 # FastAPI app
 # ------------------------------------------------------------
-app = FastAPI(title="P8OC Segmentation API")
+app = FastAPI(title="Urban Segmenter API")
 
 # ------------------------------------------------------------
 # Schéma d’entrée

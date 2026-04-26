@@ -75,8 +75,8 @@ MASKS_DIR = Path(
 # URL de l’API (modifiable via variable d’environnement)
 API_URL = os.getenv(
     "API_URL",
-    "https://p8oc-api-6972f71da6e9.herokuapp.com/predict",
-)
+    "",
+).strip()
 
 # Backend de prédiction :
 # - "local" : prédiction locale avec le modèle Keras (recommandé pour éviter les 503)
@@ -230,7 +230,7 @@ def predict_mask_local(image_rgb: np.ndarray, target_shape: tuple[int, int]) -> 
 # Interface Streamlit
 # ------------------------------------------------------------
 st.set_page_config(
-    page_title="P8 – Segmentation Cityscapes",
+    page_title="Urban Segmenter - Cityscapes",
     layout="wide",
 )
 
@@ -273,8 +273,8 @@ div[data-testid="stVerticalBlock"] > div { gap: 0.6rem; }
 )
 
 # Header “produit”
-st.title("Segmentation sémantique — scènes urbaines")
-st.caption("Projet P8 (OpenClassrooms) • Démonstrateur de segmentation Cityscapes (8 classes)")
+st.title("Urban Segmenter")
+st.caption("Démonstrateur de segmentation sémantique Cityscapes (8 classes)")
 
 st.markdown(
     """
@@ -305,7 +305,10 @@ st.sidebar.write(f"Masques : {'✅' if masks_ok else '❌'} `{MASKS_DIR}`")
 st.sidebar.markdown("### Service de prédiction")
 st.sidebar.write(f"Backend : `{PREDICTION_BACKEND}`")
 st.sidebar.write(f"Modèle local : `{MODEL_PATH}`")
-st.sidebar.code(API_URL, language="text")
+if API_URL:
+    st.sidebar.code(API_URL, language="text")
+else:
+    st.sidebar.info("API distante non configurée. Le mode local est recommandé pour la démo.")
 
 with st.sidebar.expander("Aide / informations"):
     st.write(
@@ -414,8 +417,8 @@ else:
     st.info("Sélectionner un ID, puis lancer la prédiction.")
 
 
-# ACTIVATION (Windows / PowerShell) :
-#  cd C:\Users\vicau\P8OC
+# LANCEMENT LOCAL (Windows / PowerShell) :
+#  cd D:\CloneGit\urban-segmenter
 #  .\.venv\Scripts\Activate.ps1
 #  $env:PYTHONPATH=(Get-Location)
 #
@@ -426,5 +429,5 @@ else:
 #
 # Optionnel (forcer l’API distante) :
 #  $env:PREDICTION_BACKEND="api"
-#  $env:API_URL="https://p8oc-api-6972f71da6e9.herokuapp.com/predict"
+#  $env:API_URL="https://your-api-host/predict"
 #  streamlit run app\streamlit_app.py

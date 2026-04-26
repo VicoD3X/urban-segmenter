@@ -1,4 +1,4 @@
-name: CI/CD - P8OC (API + Streamlit)
+name: CI/CD - Urban Segmenter (API + Streamlit)
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
         run: pytest -q
 
   deploy-api:
-    # 🔴 Désactivé volontairement : l’API a été déployée et fonctionnelle (Projet 8),
+    # 🔴 Désactivé volontairement : l’API a été déployée et fonctionnelle,
     # mais les limites du free tier Heroku ont été dépassées (projet énergivore :
     # modèle lourd, inférence, cold start / timeouts). L’API reste sur la dernière
     # version déployée avec succès (EfficientNetB0V2 avant fin du free tier), front toujours actif.
@@ -42,7 +42,7 @@ jobs:
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
 
-      - name: Deploy p8oc-api to Heroku
+      - name: Deploy Urban Segmenter API to Heroku
         uses: akhileshns/heroku-deploy@v3.12.12
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
@@ -64,7 +64,7 @@ jobs:
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
 
-      - name: Deploy p8oc-streamlit to Heroku
+      - name: Deploy Urban Segmenter Streamlit to Heroku
         uses: akhileshns/heroku-deploy@v3.12.12
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
