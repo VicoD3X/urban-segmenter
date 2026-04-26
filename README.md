@@ -1,60 +1,175 @@
-# Urban Segmenter — Semantic Segmentation for Urban Scenes
+# Cityscapes Segmentation Lab — U-Net Semantic Segmentation
 
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-Keras-FF6F00?logo=tensorflow&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-inference_API-009688?logo=fastapi&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-demo-FF4B4B?logo=streamlit&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)
-![Status](https://img.shields.io/badge/Status-MVP-0F172A)
+![Status](https://img.shields.io/badge/Status-CV_lab-0F172A)
 
-## Présentation
+## Présentation du projet
 
-Urban Segmenter est un MVP de segmentation sémantique appliqué aux scènes urbaines. Le projet s’appuie sur le dataset Cityscapes, des modèles U-Net entraînés avec des backbones VGG16 et EfficientNetV2B0, ainsi qu’une interface Streamlit pour visualiser les prédictions.
+Urban Segmenter est un laboratoire Computer Vision dédié à la segmentation sémantique de scènes urbaines à partir du dataset Cityscapes. Le dépôt regroupe des notebooks d’expérimentation, des architectures U-Net, une API FastAPI d’inférence et une interface Streamlit permettant de visualiser les prédictions sur quelques images de démonstration.
 
-Le dépôt regroupe aussi une preuve de concept d’évolution du modèle : comparaison d’une baseline historique avec une architecture plus moderne, en conservant un protocole de test simple et lisible.
+Le projet reste volontairement au niveau MVP portfolio : il montre une démarche complète et lisible, sans chercher à devenir une plateforme de production.
 
-## Objectif
+## Objectif technique
 
-L’objectif est de segmenter une image de rue en grandes classes visuelles exploitables : route, trottoir, bâtiments, objets, végétation, véhicules et arrière-plan. Le projet permet de montrer une démarche complète de Computer Vision : préparation des données, entraînement, évaluation, comparaison de modèles et démonstration locale.
+L’objectif est de prédire un masque de segmentation pour une image urbaine et de comparer visuellement le masque réel avec le masque prédit. Les classes Cityscapes sont regroupées en 8 familles principales pour simplifier l’analyse : arrière-plan, route, trottoir, bâtiment, construction, objet, végétation et véhicule.
 
-## Contenu actuel
+## Architecture générale
 
-- `app/` : application Streamlit de démonstration.
-- `main.py` : API FastAPI de prédiction.
-- `notebooks/` : notebooks de préparation, entraînement, évaluation et preuve de concept.
-- `src/` : fonctions utilitaires pour les données, les métriques, la visualisation et l’API.
-- `models/` : modèles Keras suivis dans le dépôt pour la démonstration.
-- `data/processed/` : échantillon d’images et de masques utilisé par l’interface.
-- `tests/` : tests légers de cohérence.
-- `documents_soutenance_P8/` et `documents_soutenance_p9/` : documents historiques du projet et de la preuve de concept.
+```text
+.
+|-- app/                     # Interface Streamlit
+|-- main.py                  # API FastAPI actuelle
+|-- src/
+|   |-- models/              # Architectures U-Net
+|   |-- utils/               # Fonctions utilitaires
+|   `-- metrics.py           # Métriques et losses
+|-- data/processed/          # Images et masques de démonstration
+|-- models/                  # Modèles Keras utilisés pour l’inférence locale
+|-- notebooks/               # Notebooks d’entraînement / évaluation
+|-- docs/                    # Documentation de synthèse du dépôt
+|-- documents_soutenance_P8/ # Supports historiques conservés
+|-- documents_soutenance_p9/ # Supports historiques conservés
+|-- captures_soutenance_P8/  # Captures historiques conservées
+|-- captures_soutenance_P9/  # Captures historiques conservées
+|-- tests/                   # Tests unitaires légers
+|-- requirements.txt         # Dépendances API FastAPI
+|-- requirements_streamlit.txt
+`-- README.md
+```
 
-## Lancement rapide
+`main.py` contient encore l’API FastAPI à la racine pour ne pas casser l’existant. Un déplacement vers `api/` pourra être envisagé plus tard si une refonte légère est décidée.
 
-Installation minimale pour l’API :
+## Modèles testés
+
+Le projet contient plusieurs architectures U-Net dans `src/models/`, notamment des variantes basées sur VGG16, MobileNetV2, ResNet50 et une version plus légère. Les modèles sauvegardés au format Keras sont placés dans `models/`.
+
+Le modèle attendu par défaut pour la démo locale est :
+
+```text
+models/unet_effnetv2b0.keras
+```
+
+## API FastAPI
+
+L’API reçoit une image encodée en base64 et renvoie un masque prédit sous forme JSON. Elle est exposée par `main.py` avec une route principale :
+
+```text
+POST /predict
+```
+
+La logique de prédiction n’a pas été modifiée dans cette passe de remise à niveau.
+
+## Interface Streamlit
+
+L’application Streamlit permet de sélectionner une image de démonstration, de lancer une prédiction, puis de comparer :
+
+- l’image RGB d’origine ;
+- le masque réel remappé vers 8 classes ;
+- le masque prédit ;
+- la répartition des classes en proportion de pixels.
+
+La démo peut fonctionner en backend local, recommandé pour le portfolio, ou via une API distante en configurant les variables d’environnement.
+
+## Données de démonstration
+
+Le dataset complet Cityscapes n’est pas versionné. Le dépôt conserve seulement quelques images et masques de démonstration dans `data/processed/`, afin que l’interface Streamlit puisse être testée sans télécharger tout le dataset.
+
+Les dossiers utilisés par défaut sont :
+
+```text
+data/processed/images/test/
+data/processed/masks/test/
+```
+
+La convention de nommage attendue est documentée dans `data/README.md`.
+
+## Installation locale
+
+Créer un environnement virtuel est recommandé :
+
+```bash
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+Installer les dépendances de l’API :
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Installation de l’interface Streamlit :
+Installer les dépendances de l’interface Streamlit :
 
 ```bash
 pip install -r requirements_streamlit.txt
 ```
 
-Lancer l’interface :
+Installer les outils de développement :
 
 ```bash
+pip install -r requirements-dev.txt
+```
+
+## Lancement de l’app Streamlit
+
+Mode local recommandé :
+
+```bash
+$env:PREDICTION_BACKEND="local"
+$env:MODEL_PATH="models\unet_effnetv2b0.keras"
 streamlit run app/streamlit_app.py
 ```
 
-Lancer l’API :
+Mode API distante, si un endpoint est disponible :
+
+```bash
+$env:PREDICTION_BACKEND="api"
+$env:API_URL="https://your-api-host/predict"
+streamlit run app/streamlit_app.py
+```
+
+## Lancement de l’API FastAPI
 
 ```bash
 uvicorn main:app --reload
 ```
 
-## Positionnement
+L’API charge le modèle Keras attendu dans `models/unet_effnetv2b0.keras`. Si ce fichier est absent, le démarrage de l’API échouera.
 
-Ce dépôt n’est pas présenté comme une solution de production. Il sert de base portfolio pour illustrer un pipeline Computer Vision orienté segmentation urbaine, avec un démonstrateur simple et une preuve de concept d’amélioration de modèle.
+## Tests
 
-Le projet a été initialement développé dans un cadre professionnalisant, puis renommé et préparé pour une remise à niveau progressive sous le nom Urban Segmenter.
+```bash
+pytest
+```
+
+Les tests actuels restent légers et vérifient surtout les utilitaires de chargement, d’appel API et de visualisation.
+
+## Déploiement Heroku
+
+Un workflow Heroku existe dans `.github/workflows/deploy-heroku.yml`. L’API distante a été testée, mais son déploiement peut être désactivé ou limité par les ressources disponibles : modèle lourd, cold start et contraintes d’hébergement gratuit.
+
+Le mode recommandé pour évaluer le projet reste donc le lancement local. L’objectif est de montrer l’architecture et le flux d’inférence, pas de maintenir une infrastructure cloud active.
+
+## Limites actuelles
+
+- Le dataset complet Cityscapes n’est pas inclus.
+- Les modèles Keras suivis dans Git sont volumineux.
+- L’API charge le modèle au démarrage, ce qui peut être coûteux sur une petite infrastructure.
+- Les résultats ne sont pas présentés comme un benchmark scientifique complet.
+- L’organisation du code reste proche du projet initial pour éviter une refonte prématurée.
+
+## Améliorations possibles
+
+- Séparer proprement l’API dans un dossier `api/`.
+- Ajouter une documentation plus détaillée des notebooks.
+- Centraliser la configuration des chemins et des modèles.
+- Réduire ou externaliser les artefacts modèles volumineux.
+- Ajouter des tests supplémentaires sur le prétraitement et le format des prédictions.
+- Préparer une démo plus légère avec un modèle optimisé.
+
+## Contexte du projet
+
+Le projet a été initialement développé dans le cadre d’un parcours professionnalisant en Data Science, puis repris comme projet portfolio Computer Vision. Cette version met l’accent sur la lisibilité du dépôt, la compréhension rapide du flux technique et la capacité à relier expérimentation, API et démonstration utilisateur.

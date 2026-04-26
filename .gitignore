@@ -23,15 +23,17 @@ __pycache__/
 .cache/
 
 # ============================================================
-# Modèles : ignorer tous les modèles sauf UNet VGG16
+# Modèles : éviter de multiplier les artefacts lourds dans Git
 # ============================================================
 models/*
 !models/unet_effnetv2b0.keras
+!models/README.md
 
 # ============================================================
 # Données : ne pas versionner les datasets complets
 # ============================================================
 data/*
+!data/README.md
 
 # --- On autorise le sous-dossier processed ---
 !data/processed/

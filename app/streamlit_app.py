@@ -230,7 +230,7 @@ def predict_mask_local(image_rgb: np.ndarray, target_shape: tuple[int, int]) -> 
 # Interface Streamlit
 # ------------------------------------------------------------
 st.set_page_config(
-    page_title="Urban Segmenter - Cityscapes",
+    page_title="Cityscapes Segmentation Lab",
     layout="wide",
 )
 
@@ -273,8 +273,8 @@ div[data-testid="stVerticalBlock"] > div { gap: 0.6rem; }
 )
 
 # Header “produit”
-st.title("Urban Segmenter")
-st.caption("Démonstrateur de segmentation sémantique Cityscapes (8 classes)")
+st.title("Cityscapes Segmentation Lab")
+st.caption("Urban Segmenter - démonstrateur Computer Vision pour scènes urbaines")
 
 st.markdown(
     """
@@ -415,19 +415,3 @@ if st.button("Lancer la prédiction", type="primary"):
     st.success("Prédiction terminée.")
 else:
     st.info("Sélectionner un ID, puis lancer la prédiction.")
-
-
-# LANCEMENT LOCAL (Windows / PowerShell) :
-#  cd D:\CloneGit\urban-segmenter
-#  .\.venv\Scripts\Activate.ps1
-#  $env:PYTHONPATH=(Get-Location)
-#
-# Recommandé (prédiction locale, évite les 503) :
-#  $env:PREDICTION_BACKEND="local"
-#  $env:MODEL_PATH="models\unet_effnetv2b0.keras"
-#  streamlit run app\streamlit_app.py
-#
-# Optionnel (forcer l’API distante) :
-#  $env:PREDICTION_BACKEND="api"
-#  $env:API_URL="https://your-api-host/predict"
-#  streamlit run app\streamlit_app.py
