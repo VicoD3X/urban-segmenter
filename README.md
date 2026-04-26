@@ -1,4 +1,4 @@
-# Urban Segmenter — Cityscapes Segmentation Lab
+# Urban Segmenter - Cityscapes Segmentation Lab
 
 [![CI](https://github.com/VicoD3X/urban-segmenter/actions/workflows/ci.yml/badge.svg)](https://github.com/VicoD3X/urban-segmenter/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
