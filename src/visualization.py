@@ -5,7 +5,6 @@ import numpy as np
 from PIL import Image
 
 from src.segmentation import CLASS_NAMES
-from src.utils.utils_visual import colorize_mask
 
 
 def np_to_pil(arr: np.ndarray) -> Image.Image:

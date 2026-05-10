@@ -1,6 +1,6 @@
 # Données
 
-Le dataset complet Cityscapes n’est pas versionné dans ce dépôt. Il est trop volumineux pour être inclus proprement dans un projet portfolio GitHub.
+Le dataset complet Cityscapes n’est pas versionné dans ce dépôt. Il est trop volumineux pour être inclus proprement dans un dépôt GitHub public.
 
 Le dépôt conserve uniquement un petit jeu de démonstration utilisé par l’application Streamlit :
 

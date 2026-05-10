@@ -36,7 +36,6 @@ def unet_resnet50(input_shape=(256, 512, 3), num_classes=8):
 
     # Extraction intermédiaire (trois niveaux utiles)
     c1 = resnet.get_layer("conv1_relu").output         # 128x256x64
-    p1 = resnet.get_layer("pool1_pool").output         # 64x128x64
 
     c2 = resnet.get_layer("conv2_block3_out").output   # 64x128x256
     c3 = resnet.get_layer("conv3_block4_out").output   # 32x64x512

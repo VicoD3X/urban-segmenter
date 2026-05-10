@@ -32,10 +32,8 @@ def unet_vgg16(input_shape=(256, 512, 3), num_classes=8):
 
     # Extraction de 3 niveaux de features
     c1 = vgg.get_layer("block1_conv2").output   # 256x512x64
-    p1 = vgg.get_layer("block1_pool").output    # 128x256x64
 
     c2 = vgg.get_layer("block2_conv2").output   # 128x256x128
-    p2 = vgg.get_layer("block2_pool").output    # 64x128x128
 
     c3 = vgg.get_layer("block3_conv3").output   # 64x128x256
 

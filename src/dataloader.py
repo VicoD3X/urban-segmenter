@@ -4,7 +4,6 @@ import tensorflow as tf
 from tensorflow.keras.utils import Sequence # type: ignore
 
 import albumentations as A
-from pathlib import Path
 
 
 # ============================================================

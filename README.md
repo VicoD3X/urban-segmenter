@@ -184,4 +184,4 @@ Le mode recommandé pour évaluer le projet reste le lancement local. L’object
 
 ## Contexte du projet
 
-Urban Segmenter est maintenu comme projet portfolio Computer Vision. Cette version met l’accent sur la lisibilité du dépôt, la compréhension rapide du flux technique et la capacité à relier expérimentation, API et démonstration utilisateur.
+Urban Segmenter est maintenu comme démonstrateur Computer Vision. Cette version met l’accent sur la lisibilité du dépôt, la compréhension rapide du flux technique et la capacité à relier expérimentation, API et démonstration utilisateur.
